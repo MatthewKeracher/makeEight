@@ -1,4 +1,4 @@
-class items {
+class Items {
   constructor() {
     this.items = [];
   }
@@ -40,7 +40,7 @@ class items {
   }
 
   filterItems(type) {
-    return this.items.filter(obj => obj.type === type);
+    return this.items.filter((obj) => obj.type === type);
   }
 
   getItem(type) {
@@ -49,27 +49,31 @@ class items {
       return undefined;
     }
     const randomIndex = rand(0, byType.length - 1);
-    log(byType[randomIndex]);
     return byType[randomIndex];
   }
-
 }
 
-class item {
+class Item {
   name = "";
   type = "";
+  effect = "";
+  range = [];
   description = "";
-
   quality = 0;
   wear = 0;
-  
+
   constructor(item) {
     this.name = item?.name || "New Item";
+    this.type = item?.type || "General";
+    this.effect = item?.effect || "None";
+    this.range = item?.range || [1,6]
     this.description = item?.description || "No description available.";
-    this.quality = rand(1, 5);
-    this.wear = rand(0, 5);
+    this.quality = item?.quality || rand(3, 5);
+    this.wear = item?.wear || rand(1, 2);
   }
-
 }
+
+
+
 
 

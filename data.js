@@ -1,38 +1,148 @@
-const loc = new map ("Locations")
-const player = new players ("Players")
-const inv = new items ("Items")
+const player = new players("Players");
+const loc = new map("Locations");
+const inv = new Items("Items");
 
-function rand(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
+//medicine
+inv.add(
+  new Item({
+    name: "Happy Pills",
+    type: "medical",
+    description: "Increase Morale by 1d6.",
+    effect: "morale",
+  })
+);
+inv.add(
+  new Item({
+    name: "Energy Pills",
+    type: "medical",
+    description: "Increase Energy by 1d6.",
+    effect: "energy",
+    wear: 0,
+    quality: 5,
+  })
+);
 
-loc.add(new Location({
+//tools
+inv.add(
+  new Item({
+    name: "Screwdriver",
+    type: "tool",
+    description: "A handheld tool for screwing.",
+  })
+);
+inv.add(
+  new Item({
+    name: "Flashlight",
+    type: "tool",
+    description: "Illuminates dark areas. Requires batteries to operate.",
+  })
+);
+
+inv.add(
+  new Item({
+    name: "Multi-tool",
+    type: "tool",
+    description:
+      "A compact device with pliers, knife, and screwdriver attachments.",
+  })
+);
+
+inv.add(
+  new Item({
+    name: "Duct Tape",
+    type: "tool",
+    description: "Can be used to repair broken equipment or seal small wounds.",
+  })
+);
+
+//melee weapons
+inv.add(
+  new Item({
+    name: "Crowbar",
+    type: "melee",
+    effect: "zombies",
+    range: [1, 1],
+    description:
+      "Useful for prying open doors or crates. Can double as a weapon.",
+  })
+);
+
+//ranged weapons
+inv.add(
+  new Item({
+    name: "Handgun",
+    type: "ranged",
+    effect: "zombies",
+    range: [1, 1],
+    description: "Can shoot zombies, requires ammo tokens to fire.",
+  })
+);
+
+//armor
+inv.add(
+  new Item({
+    name: "Motorcycle Helmet",
+    type: "armor",
+    description: "Takes damage from Zombies instead of you.",
+  })
+);
+
+//toys
+inv.add(
+  new Item({
+    name: "Playing Cards",
+    type: "toy",
+    description: "Can be used with leisure to gain morale.",
+  })
+);
+
+loc.add(
+  new Location({
     name: "Gas Station",
-    options: ["Zombies!", "fuel", "food", "water", "materials", "tools"]
-}));
+    options: [
+      "Zombies!",
+      "fuel",
+      "food",
+      "water",
+      inv.getItem("toy"),
+      inv.getItem("tool"),
+    ],
+  })
+);
 
-inv.add(new item({"name": "First Aid Kit", "type": "medical", "description": "A kit containing medical supplies."}));
-
-loc.add(new Location({
+loc.add(
+  new Location({
     name: "Pharmacy",
     safety: 0,
-    options: [inv.getItem("medical"), inv.getItem("medical"), inv.getItem("medical"), inv.getItem("medical"), inv.getItem("medical"), inv.getItem("medical")]
-}));
+    options: [
+      "Zombies!",
+      inv.getItem("medical"),
+      "food",
+      "water",
+      "materials",
+      inv.getItem("medical"),
+    ],
+  })
+);
 
-player.add(new Player({"name": "Matthew"}));
+player.add(new Player({ name: "Matthew" }));
 
+// loc.all().forEach((entry) => {
+//   log(entry)
+// });
 
+// inv.all().forEach((entry) => {
+//   log(entry)
+// });
 
-loc.n("Pharmacy").addChar(player.n("Matthew"));
+player.n("Matthew").location = loc.n("Pharmacy");
+loc.n("Pharmacy").occupants.push(player.n("Matthew"));
 
-loc.all().forEach((entry) => {
-  log(entry)
-});
+nextTurn();
 
-player.all().forEach((entry) => {
-  log(entry)
-});
+//Starting Items
+player.n("Matthew").inventory.push({ ...inv.n("Crowbar") });
+player.n("Matthew").inventory.push({ ...inv.n("Handgun") });
 
-inv.all().forEach((entry) => {
-  log(entry)
-});
+log(player.n("Matthew"));
+help()

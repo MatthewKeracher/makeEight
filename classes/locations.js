@@ -41,20 +41,19 @@ class map {
 
   removeFromLocations(variable) {
     this.locations.forEach((loc) => {
-      if(loc.occupants.length > 0) {
-        if(loc.safety === 0) {
+      if (loc.occupants.length > 0) {
+        if (loc.safety === 0) {
           console.error(`${loc.name} has no safety to lose.`);
           console.error(`Zombies are attacking ${loc.name}!`);
-        }else{
-      loc[variable] = Math.max(0, loc[variable] - 1);
-      console.log(
-        `${loc.name} has lost ${variable}. Current ${variable}: ${loc[variable]}`
-      );
-    }
-    }
+        } else {
+          loc[variable] = Math.max(0, loc[variable] - 1);
+          console.log(
+            `${loc.name} has lost ${variable}. Current ${variable}: ${loc[variable]}`
+          );
+        }
+      }
     });
   }
-
 }
 
 class Location {
@@ -62,11 +61,14 @@ class Location {
   options = {};
   safety = 0;
   occupants = [];
+  zombies = 0;
 
   constructor(loc) {
     this.name = loc?.name || "Empty Location";
     this.options = loc?.options || [];
     this.safety = loc?.safety || rand(1, 6);
+    this.occupants = loc?.occupants || [];
+    this.zombies = 0;
   }
 
   addChar(occupant) {
@@ -85,4 +87,12 @@ class Location {
     this.occupants = this.occupants.filter((o) => o !== occupant);
     occupant.location = {};
   }
+
+  zombies() {
+    const zombies = rand(1, 6);
+    console.error(`You have encountered ${zombies} zombies!`);
+  }
 }
+
+
+

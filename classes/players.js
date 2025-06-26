@@ -73,6 +73,7 @@ class Player {
   food = 0;
   water = 0;
   fuel = 0;
+  ammo = 0;
   materials = 0;
   tools = 0;
   morale = 0;
@@ -83,20 +84,43 @@ class Player {
     this.name = char?.name || "New Player";
     this.hasActed = false;
 
-    this.food = rand(5, 10);
-    this.water = rand(5, 10);
+    this.food = rand(1, 6);
+    this.water = rand(1, 6);
     this.fuel = 0;
+    this.ammo = 6;
     this.materials = 0;
     this.tools = 0;
-    this.morale = rand(5, 10);
-    this.energy = rand(5, 10);
+    this.morale = rand(1, 6);
+    this.energy = rand(1, 6);
 
     this.inventory = [];
   }
 
   goTo(location) {
+    if (this.location.zombies > 0) {
+      const fleeRoll = rand(1, 6);
+      log("Roll against Zombies...");
+      log(`You roll a ${fleeRoll} against the ${this.location.zombies}`);
+
+      if (fleeRoll <= this.location.zombies) {
+        
+        return `The zombies have bitten you. Game Over.`;
+      }
+
+    } else if (this.hasActed) {
+      return `${this.name} has already acted this turn.`;
+    }
+
+    this.loseEnergy();
+
+    this.location.remChar(this);
     this.location = location;
     location.addChar(this);
+
+    log(`${this.name} has gone to the ${this.location.name}.`)
+    log(`Available to scavenge()`, this.location.options)
+
+    return this;
   }
 
   loseEnergy() {
@@ -104,7 +128,7 @@ class Player {
     this.hasActed = true;
 
     if (this.energy === 3) {
-      console.warn(`Your energy is low, you should rest soon.`);
+      console.warn(`You have ${this.energy} energy left, you should rest soon.`);
     }
 
     if (this.energy === 0) {
@@ -116,6 +140,10 @@ class Player {
   fortify() {
     if (this.hasActed) {
       return `${this.name} has already acted this turn.`;
+    }
+
+    if (this.location.zombies > 0) {
+      return `You cannot do this with zombies nearby.`;
     }
 
     if (this.materials === 0) {
@@ -138,6 +166,10 @@ class Player {
       return `${this.name} has already acted this turn.`;
     }
 
+    if (this.location.zombies > 0) {
+      return `You cannot do this with zombies nearby.`;
+    }
+
     this.energy = this.energy + rand(1, 6);
 
     if (this.energy >= 12) {
@@ -151,29 +183,109 @@ class Player {
 
   scavenge() {
     if (this.energy <= 0) {
-      return `${this.name} has no Action Points left to scavenge.`;
+      return `${this.name} has no Energy to scavenge. They should sleep first.`;
     }
 
     if (this.hasActed) {
       return `${this.name} has already acted this turn.`;
     }
 
-    const rollResult = rand(1, 6);
+    if (this.location.zombies > 0) {
+      return `You cannot do this with zombies nearby.`;
+    }
+
+    const rollResult = 1 //rand(1, 6);
     const result = this.location.options[rollResult - 1];
     const amountFound = rand(1, 6);
 
     this.loseEnergy();
 
     if (rollResult === 1) {
-      return `You have encountered zombies! You must flee!`;
+      //Zombies
+      this.location.zombies = this.location.zombies + rand(1, 6);
+      return `You encounter ${this.location.zombies} zombies in the ${this.location.name}.`;
     } else if (typeof result === "object") {
-      this.inventory.push(result);
-    }else {
+      this.inventory.push({ ...result });
+      return `You have found ${result.name} at the ${this.location.name}.`;
+    } else {
       this[result] = this[result] + amountFound;
       return (
-        `You have found ${amountFound} ${result} at ${this.location.name}. You now have ${this[result]} ${result}.` ||
+        `You have found ${amountFound} ${result} at the ${this.location.name}. You now have ${this[result]} ${result}.` ||
         "Nothing found."
       );
     }
   }
+
+  play() {
+    if (this.energy <= 0) {
+      return `${this.name} has no Energy to play. They should sleep first.`;
+    }
+
+    if (this.hasActed) {
+      return `${this.name} has already acted this turn.`;
+    }
+
+    if (this.location.zombies > 0) {
+      return `You cannot do this with zombies nearby.`;
+    }
+
+    const toys = this.inventory.filter((item) => item.type === "toy");
+
+    if (toys && toys.length > 0) {
+      this.loseEnergy();
+      let moraleBoost = this.location.occupants.length;
+      return `You gain ${moraleBoost} Morale from playing with ${toys[0].name}.`;
+    } else {
+      return `You need something to play with.`;
+    }
+  }
+
+  use(name) {
+    // if (this.energy <= 0) {
+    //   return `${this.name} has no Energy to play. They should sleep first.`;
+    // }
+
+    // if (this.hasActed) {
+    //   return `${this.name} has already acted this turn.`;
+    // }
+
+    //Check I have the item.
+    const item = this.inventory.find((item) => item.name === name);
+    console.log(item);
+
+    if (item !== undefined) {
+      if (item.effect === "None") {
+        return `You gaze blankly at the ${item.name}, unsure what to do with it.`;
+      }
+
+      if (item.wear === item.quality) {
+        return `You cannot use ${item.name}. It is broken or empty.`;
+      }
+
+      item.wear++;
+
+      const rollResult = rand(item.range[0], item.range[1]);
+
+      if(item.effect === "zombies"){
+      
+        if(item.type === "melee"){
+          this.energy --
+          this.location[item.effect] =  this.location[item.effect] - rollResult;
+          return `You kill ${rollResult} zombie with the ${item.name}. There are ${this.location.zombies} zombies left. You have ${this.energy} bullet left.`
+        }else if (item.type === "ranged" && this.ammo > 0){
+          this.ammo --
+          this.location[item.effect] =  this.location[item.effect] - rollResult;
+          return `You kill ${rollResult} zombie with the ${item.name}. There are ${this.location.zombies} zombies left. You have ${this.ammo} bullet left.`;
+        }
+
+      }else{
+      this[item.effect] = this[item.effect] + rollResult;
+       return `You gain ${rollResult} ${item.effect} from using ${item.name}.`;
+      }
+    
+    } else {
+      return `You do not have "${name}" in your inventory.`;
+    }
+  }
 }
+
