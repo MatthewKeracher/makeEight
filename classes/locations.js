@@ -54,19 +54,42 @@ class map {
       }
     });
   }
+
+ 
+
+  map(){
+
+  const container = document.querySelector('.grid-container');
+
+  this.locations.forEach(loc => {
+  const item = document.createElement('div');
+  item.className = 'grid-item';
+  item.textContent = loc.name;
+  // CSS grid is 1-based indexing for rows and columns
+  item.style.gridColumnStart = loc.coords.x;
+  item.style.gridRowStart = loc.coords.y;
+ 
+  container.appendChild(item);
+  });
+
+  }
+
 }
 
 class Location {
   name = "";
+  coords = {x: 0, y: 0};
   options = {};
   safety = 0;
   occupants = [];
   zombies = 0;
+  
 
   constructor(loc) {
     this.name = loc?.name || "Empty Location";
+    this.coords = loc?.coords || {x: 0, y: 0};
     this.options = loc?.options || [];
-    this.safety = loc?.safety || rand(1, 6);
+    this.safety = loc?.safety || rand(1,3);
     this.occupants = loc?.occupants || [];
     this.zombies = 0;
   }
@@ -93,6 +116,8 @@ class Location {
     console.error(`You have encountered ${zombies} zombies!`);
   }
 }
+
+
 
 
 

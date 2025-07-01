@@ -13,6 +13,9 @@ function help() {
 }
 
 function nextTurn() {
+
+  console.clear()
+
   for (const location of loc.all()) {
     if (location.occupants.length > 0 && location.zombies > 0) {
       return `Cannot proceed while ${location.occupants[0].name} is facing zombies at the ${location.name}!`;
@@ -66,6 +69,31 @@ function nextTurn() {
   player.all().forEach((player) => {
     player.hasActed = false;
   });
+
+  const me = player.n("Matthew")
+
+  log(`You have: 
+    ${me.ammo} Ammo
+    ${me.energy} Energy
+    ${me.food} Food
+    ${me.fuel} Fuel
+    ${me.materials} Materials
+    ${me.morale} Morale
+    ${me.water} Water`);
+
+    me.inventory.forEach(item => log(item.name, `${item.wear}/${item.quality}`))
+
+    log(`You are at ${me.location.name}:
+    ${me.location.safety} Safety (fortify)
+    ${me.location.zombies} Zombies`)
+
+    log(`Scavenge() here for chance of:
+    1. ${me.location.options[0]} 
+    2. ${me.location.options[1]} 
+    3. ${me.location.options[2]} 
+    4. ${me.location.options[3]} 
+    5. ${me.location.options[4]} 
+    6. ${me.location.options[5]}`);
 
   return timeNow;
 }

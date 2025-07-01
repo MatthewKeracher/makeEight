@@ -44,7 +44,7 @@ class Items {
   }
 
   getItem(type) {
-    const byType = this.filterItems(type);
+    const byType = type ? this.filterItems(type) : this.items;
     if (byType.length === 0) {
       return undefined;
     }

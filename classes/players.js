@@ -89,38 +89,71 @@ class Player {
     this.fuel = 0;
     this.ammo = 6;
     this.materials = 0;
-    this.tools = 0;
     this.morale = rand(1, 6);
     this.energy = rand(1, 6);
 
     this.inventory = [];
   }
 
-  goTo(location) {
-    if (this.location.zombies > 0) {
-      const fleeRoll = rand(1, 6);
-      log("Roll against Zombies...");
-      log(`You roll a ${fleeRoll} against the ${this.location.zombies}`);
+  walk(dir) {
 
-      if (fleeRoll <= this.location.zombies) {
-        
-        return `The zombies have bitten you. Game Over.`;
+    //Leaving Current Location
+      if (this.location.zombies > 0) {
+        const fleeRoll = rand(1, 6);
+        log("Roll against Zombies...");
+        log(`You roll a ${fleeRoll} against the ${this.location.zombies}`);
+
+        if (fleeRoll <= this.location.zombies) {
+          const armor = this.inventory.filter(
+            (item) => item.type === "armor" && item.wear > 0
+          );
+          log(
+            `The zombies tried to bite you, but you were saved by ${armor[0].name}.`
+          );
+          log(`${armor[0].name} has ${armor[0].wear} strength.`);
+
+          if (armor.length > 0) {
+            armor[0].wear--;
+            return `${armor[0]}`;
+          } else {
+            return `The zombies have bitten you. Game Over.`;
+          }
+        }
+      } else if (this.hasActed) {
+        return `${this.name} has already acted this turn.`;
       }
 
-    } else if (this.hasActed) {
-      return `${this.name} has already acted this turn.`;
+    //Finding New Location
+    const location = compass(dir, this.location.coords)
+
+    if(location.name === "nothing"){
+      return `You cannot go there. Try somewhere else.`
     }
 
-    this.loseEnergy();
+      //Going to New Location
+      this.loseEnergy();
 
-    this.location.remChar(this);
-    this.location = location;
-    location.addChar(this);
+      this.location.remChar(this);
+      this.location = location;
+      this.location.addChar(this);
 
-    log(`${this.name} has gone to the ${this.location.name}.`)
-    log(`Available to scavenge()`, this.location.options)
+      log(`${this.name} has gone to the ${this.location.name}.`);
+      log(`Available to scavenge()`, this.location.options);
 
-    return this;
+      return this;
+  
+  }
+
+  look(){
+
+  ["north", "south", "east", "west"].forEach(dir => {
+
+    const sight = compass(dir, this.location.coords);
+
+    log(`To the ${dir} is ${sight.name}.`);
+
+  })  
+
   }
 
   loseEnergy() {
@@ -128,13 +161,17 @@ class Player {
     this.hasActed = true;
 
     if (this.energy === 3) {
-      console.warn(`You have ${this.energy} energy left, you should rest soon.`);
+      console.warn(
+        `You have ${this.energy} energy left, you should rest soon.`
+      );
     }
 
     if (this.energy === 0) {
       console.error(`Your energy is depleted, you cannot perform any actions.`);
       this.sleep();
     }
+
+    return `You have used one energy. You have ${this.energy} left. Hit nextTurn().`;
   }
 
   fortify() {
@@ -150,7 +187,7 @@ class Player {
       return `You do not have enough materials to fortify your position.`;
     } else {
       this.materials--;
-      this.location.safety++;
+      this.location.safety =  this.location.safety + rand(1,6);
       this.loseEnergy();
 
       return `You fortify your position at ${this.location.name}. Current safety: ${this.location.safety}.`;
@@ -194,21 +231,60 @@ class Player {
       return `You cannot do this with zombies nearby.`;
     }
 
-    const rollResult = 1 //rand(1, 6);
+    const rollResult = rand(1, 6);
     const result = this.location.options[rollResult - 1];
     const amountFound = rand(1, 6);
 
     this.loseEnergy();
 
-    if (rollResult === 1) {
+    if (result === "zombies") {
       //Zombies
-      this.location.zombies = this.location.zombies + rand(1, 6);
-      return `You encounter ${this.location.zombies} zombies in the ${this.location.name}.`;
+
+      const zombies = rand(1, 6);
+
+      if (this.location.safety >= zombies) {
+        //Location in secure.
+        this.location.safety--;
+        log(
+          `Zombies tried to get in. You have lost one safety at ${this.location.name}. It has ${this.location.safety} safety left.`
+        );
+        //Reroll!
+        this.energy++;
+        this.hasActed = false;
+        return this.scavenge();
+      } else {
+        //Resolve Zombies versus Safety
+        log(`You encounter ${zombies} zombies.`);
+        log(`${this.location.name} has ${this.location.safety} safety.`);
+
+        let newSafety = this.location.safety - zombies;
+        if (newSafety < 0) {
+          newSafety = 0;
+        }
+
+        let newZombies = zombies - this.location.safety;
+        if (newZombies < 0) {
+          newZombies = 0;
+        }
+
+        this.location.zombies = newZombies;
+        this.location.safety = newSafety;
+
+        log(
+          `${this.location.name} lost ${zombies} safety. It now has ${this.location.safety} safety.`
+        );
+
+        return `You encounter ${this.location.zombies} zombies in the ${this.location.name}.`;
+      }
     } else if (typeof result === "object") {
+      //Add Item to inventory.
       this.inventory.push({ ...result });
+
       return `You have found ${result.name} at the ${this.location.name}.`;
     } else {
+      //Add resources to character.
       this[result] = this[result] + amountFound;
+
       return (
         `You have found ${amountFound} ${result} at the ${this.location.name}. You now have ${this[result]} ${result}.` ||
         "Nothing found."
@@ -266,26 +342,22 @@ class Player {
 
       const rollResult = rand(item.range[0], item.range[1]);
 
-      if(item.effect === "zombies"){
-      
-        if(item.type === "melee"){
-          this.energy --
-          this.location[item.effect] =  this.location[item.effect] - rollResult;
-          return `You kill ${rollResult} zombie with the ${item.name}. There are ${this.location.zombies} zombies left. You have ${this.energy} bullet left.`
-        }else if (item.type === "ranged" && this.ammo > 0){
-          this.ammo --
-          this.location[item.effect] =  this.location[item.effect] - rollResult;
+      if (item.effect === "zombies") {
+        if (item.type === "melee") {
+          this.energy--;
+          this.location[item.effect] = this.location[item.effect] - rollResult;
+          return `You kill ${rollResult} zombie with the ${item.name}. There are ${this.location.zombies} zombies left. You have ${this.energy} energy left.`;
+        } else if (item.type === "ranged" && this.ammo > 0) {
+          this.ammo--;
+          this.location[item.effect] = this.location[item.effect] - rollResult;
           return `You kill ${rollResult} zombie with the ${item.name}. There are ${this.location.zombies} zombies left. You have ${this.ammo} bullet left.`;
         }
-
-      }else{
-      this[item.effect] = this[item.effect] + rollResult;
-       return `You gain ${rollResult} ${item.effect} from using ${item.name}.`;
+      } else {
+        this[item.effect] = this[item.effect] + rollResult;
+        return `You gain ${rollResult} ${item.effect} from using ${item.name}.`;
       }
-    
     } else {
       return `You do not have "${name}" in your inventory.`;
     }
   }
 }
-

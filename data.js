@@ -2,6 +2,7 @@ const player = new players("Players");
 const loc = new map("Locations");
 const inv = new Items("Items");
 
+
 //medicine
 inv.add(
   new Item({
@@ -87,6 +88,14 @@ inv.add(
   })
 );
 
+inv.add(
+  new Item({
+    name: "Stab Vest",
+    type: "armor",
+    description: "Takes damage from Zombies instead of you.",
+  })
+);
+
 //toys
 inv.add(
   new Item({
@@ -100,7 +109,7 @@ loc.add(
   new Location({
     name: "Gas Station",
     options: [
-      "Zombies!",
+      "zombies",
       "fuel",
       "food",
       "water",
@@ -115,7 +124,7 @@ loc.add(
     name: "Pharmacy",
     safety: 0,
     options: [
-      "Zombies!",
+      "zombies",
       inv.getItem("medical"),
       "food",
       "water",
@@ -124,6 +133,56 @@ loc.add(
     ],
   })
 );
+
+loc.add(
+  new Location({
+    name: "Hardware Store",
+    safety: 0,
+    options: [
+      "zombies",
+      inv.getItem("armor"),
+      "zombies",
+      inv.getItem("tool"),
+      "materials",
+      inv.getItem("melee"),
+    ],
+  })
+);
+
+loc.add(
+  new Location({
+    name: "Diner",
+    safety: 0,
+    options: [
+      "zombies",
+      "food",
+      "zombies",
+      "water",
+      "food",
+      inv.getItem(),
+    ],
+  })
+);
+
+//after locations have been made, assign coordinates to each entry
+
+function setCoords() {
+  const locations = loc.all();
+  let index = 0;
+  for (let y = 1; y <= 6; y++) {
+    for (let x = 1; x <= 5; x++) {
+      if (index < locations.length) {
+        log(locations[index])
+        locations[index].coords.x = x;
+        locations[index].coords.y = y;
+        index++;
+      }
+    }
+  }
+}
+
+setCoords();
+loc.map();
 
 player.add(new Player({ name: "Matthew" }));
 
@@ -138,11 +197,20 @@ player.add(new Player({ name: "Matthew" }));
 player.n("Matthew").location = loc.n("Pharmacy");
 loc.n("Pharmacy").occupants.push(player.n("Matthew"));
 
-nextTurn();
+
 
 //Starting Items
 player.n("Matthew").inventory.push({ ...inv.n("Crowbar") });
 player.n("Matthew").inventory.push({ ...inv.n("Handgun") });
+player.n("Matthew").inventory.push({ ...inv.n("Stab Vest") });
 
-log(player.n("Matthew"));
-help()
+nextTurn();
+
+const me = player.n("Matthew")
+log(`type help() for functions`)
+
+
+const nextTurnButton = document.getElementById("nextTurn")
+nextTurnButton.addEventListener("click", function() {
+  nextTurn();
+});
