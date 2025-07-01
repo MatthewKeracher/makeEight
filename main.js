@@ -5,7 +5,7 @@ let day = 1;
 function help() {
   log(`nextTurn(): moves time forward.`);
   log(`scavenge(): search Location.`);
-  log(`goTo(): move to another Location.`);
+  log(`walk(): move to another Location.`);
   log(`fortify(): increase safety at Location. Requires materials.`);
   log(`use(item name): Use item in inventory.`);
   log(`sleep(): recover 1d6 energy.`);
