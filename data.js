@@ -107,6 +107,20 @@ inv.add(
 
 loc.add(
   new Location({
+    name: "Hunting Store",
+    options: [
+      "zombies",
+      "ammo",
+      "food",
+      "water",
+      inv.getItem("toy"),
+      inv.getItem("ranged"),
+    ],
+  })
+);
+
+loc.add(
+  new Location({
     name: "Gas Station",
     options: [
       "zombies",
